@@ -2,20 +2,86 @@
 #+begin_src emacs-lisp
   (save-buffer)
   (org-babel-tangle)
+  (async-shell-command "./extract.sh" "log" "err")
 #+end_src
 
 #+RESULTS:
-| /mnt/main_root/home/asd/GITHUB/aravindhv10/weldnut/venv_setup.sh |
+: #<window 180 on log>
 
 * First, set up the venv
 I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
+
+** Create venv
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   uv venv "${HOME}/BEN2"
+#+end_src
+
+** Activate venv
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   . "${HOME}/BEN2/bin/activate"
+#+end_src
+
+** Install torch
+
+*** For cpu
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   uv pip install \
       'torch' \
       'torchvision' \
       'torchaudio' \
       '--index-url' 'https://download.pytorch.org/whl/cpu' \
   ;
+#+end_src
+
+** Download and install BEN2
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
+  get_repo(){
+      DIR_REPO="${HOME}/GITHUB/$('echo' "${1}" | 'sed' 's/^git@github.com://g ; s@^https://github.com/@@g ; s@.git$@@g' )"
+      DIR_BASE="$('dirname' '--' "${DIR_REPO}")"
+
+      mkdir -pv -- "${DIR_BASE}"
+      cd "${DIR_BASE}"
+      git clone "${1}"
+      cd "${DIR_REPO}"
+
+      if test "${#}" '-ge' '2'
+      then
+          git switch "${2}"
+      else
+          git switch main
+      fi
+
+      git pull
+      git submodule update --recursive --init
+
+      if test "${#}" '-ge' '3'
+      then
+          git checkout "${3}"
+      fi
+  }
+
+  get_repo 'https://github.com/PramaLLC/BEN2.git'
+  uv pip install .
+#+end_src
+
+* Extract and set up the images
+
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
+  unzip 'Weldnut.zip'
+
+  rm -vrf -- '__MACOSX'
+
+  mkdir jpeg mov
+
+  mv -vf 'Weldnut/IMG_0621 weldnut.jpeg' 'Weldnut/IMG_0628 weldnut.jpeg' 'Weldnut/IMG_0622 weldnut.jpeg' 'Weldnut/IMG_0623 weldnut.jpeg' 'Weldnut/IMG_0624 weldnut.jpeg' 'Weldnut/IMG_0625 weldnut.jpeg' 'Weldnut/IMG_0626 weldnut.jpeg' 'Weldnut/IMG_0627 weldnut.jpeg' 'jpeg'
+
+  mv -vf 'Weldnut/IMG_0629 weldnut.MOV' 'Weldnut/IMG_0631-14 weldnut scan.MOV' 'Weldnut/IMG_0632-14 weldnut scan.MOV' 'Weldnut/IMG_0633-12 weldnut scan.MOV' 'Weldnut/IMG_0630-14 weldnut scan.MOV' 'mov'
+#+end_src
+
+
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
+#+end_src
+
+
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
 #+end_src
