@@ -36,6 +36,8 @@ def visualize(name):
     for i in range(3):
         masked[:, :, i] = orig[:, :, i] * segm
     final_array = np.array([orig, masked])
+    print(final_array.shape)
+
     os.makedirs(name="./masked/", exist_ok=True)
     cv2.imwrite("./masked/" + name, masked)
 

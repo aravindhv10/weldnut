@@ -105,11 +105,15 @@ This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
 
 * Main code for segmenting the weldnut images
 
+** Shell script to 
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./segment.sh
   . "${HOME}/BEN2/bin/activate"
+  python3 ./segment.py
 #+end_src
 
+** Main python code
 
+*** Import the libraries
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
   from PIL import Image
   from ben2 import BEN_Base
@@ -119,16 +123,19 @@ This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
   import torch
 #+end_src
 
+** Create directory to store the output files
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
   os.makedirs(name='./mask/',  exist_ok=True)
 #+end_src
 
+** Device to run the model on
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
   model = BEN_Base.from_pretrained("PramaLLC/BEN2")
   model.to(device).eval()
 #+end_src
 
+** Main function to do the segmentation
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
   def slave(name):
       image = Image.open("./png/" + name)
@@ -140,16 +147,20 @@ This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
       foreground.save("./mask/" + name)
 #+end_src
 
+** Segment all the input images
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
   for i in os.listdir("./png/"):
       slave(name=i)
 #+end_src
 
+** Extract the mask from RGBA images
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
   def process_segment(img):
       return (img[:, :, 3] > 127).astype(np.uint8)
+#+end_src
 
-
+** Simple check to see the masks are good
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
   def visualize(name):
       orig = cv2.imread("./png/" + name, cv2.IMREAD_COLOR)
       segm = cv2.imread("./mask/" + name, cv2.IMREAD_UNCHANGED)
@@ -157,11 +168,37 @@ This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
       masked = orig.copy()
       for i in range(3):
           masked[:, :, i] = orig[:, :, i] * segm
-      final_array = np.array([orig, masked])
-      os.makedirs(name="./masked/", exist_ok=True)
-      cv2.imwrite("./masked/" + name, masked)
+      final_array = np.array([orig, masked]).reshape((orig.shape[0]*2, orig.shape[1], 3))
+      print(final_array.shape)
+
+      os.makedirs(name="./vis/", exist_ok=True)
+      cv2.imwrite("./vis/" + name, final_array)
 
 
   for i in os.listdir("./png/"):
       visualize(i)
 #+end_src
+
+** Misc code
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
+  def grow_mask(name):
+      segm = cv2.imread("./mask/" + name, cv2.IMREAD_UNCHANGED)
+      segm = process_segment(segm) * 255
+      kernel1 = np.array(
+          [
+              [1, 1, 1, 1, 1],
+              [1, 1, 1, 1, 1],
+              [1, 1, 1, 1, 1],
+              [1, 1, 1, 1, 1],
+              [1, 1, 1, 1, 1],
+          ]
+      )
+      segm = cv2.filter2D(src=segm, ddepth=-1, kernel=kernel1)
+      cv2.imwrite("./mask/B_" + name, segm)
+
+
+  for i in os.listdir("./png/"):
+      grow_mask(i)
+#+end_src
+
+These produce almost perfect semantic segmentation masks, object detection at this stage is trivial.
