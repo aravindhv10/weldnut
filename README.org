@@ -74,6 +74,8 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
   cd sam2
   uv pip install .
   uv pip install ".[notebooks]"
+  cd checkpoints
+  ./download_ckpts.sh
 #+end_src
 
 * Extract and set up the images

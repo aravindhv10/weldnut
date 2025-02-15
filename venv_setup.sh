@@ -44,3 +44,5 @@ get_repo 'https://github.com/yangchris11/samurai.git'
 cd sam2
 uv pip install .
 uv pip install ".[notebooks]"
+cd checkpoints
+./download_ckpts.sh
