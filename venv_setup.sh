@@ -9,6 +9,7 @@ uv pip install \
     'torchaudio' \
     '--index-url' 'https://download.pytorch.org/whl/cpu' \
 ;
+
 uv pip install 'ipython' 'opencv-python'
 
 get_repo(){
