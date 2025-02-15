@@ -6,7 +6,7 @@
 #+end_src
 
 #+RESULTS:
-: #<window 180 on log>
+: #<window 282 on log>
 
 * First, set up the venv
 I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
@@ -31,6 +31,7 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
       'torchaudio' \
       '--index-url' 'https://download.pytorch.org/whl/cpu' \
   ;
+  uv pip install 'ipython' 'opencv-python'
 #+end_src
 
 ** Download and install BEN2
@@ -66,11 +67,18 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
 
 * Extract and set up the images
 
+** Extract the zip
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
   unzip 'Weldnut.zip'
+#+end_src
 
+** Some cleanups
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
   rm -vrf -- '__MACOSX'
+#+end_src
 
+** Organize images and videos
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
   mkdir jpeg mov
 
   mv -vf 'Weldnut/IMG_0621 weldnut.jpeg' 'Weldnut/IMG_0628 weldnut.jpeg' 'Weldnut/IMG_0622 weldnut.jpeg' 'Weldnut/IMG_0623 weldnut.jpeg' 'Weldnut/IMG_0624 weldnut.jpeg' 'Weldnut/IMG_0625 weldnut.jpeg' 'Weldnut/IMG_0626 weldnut.jpeg' 'Weldnut/IMG_0627 weldnut.jpeg' 'jpeg'
@@ -78,10 +86,50 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
   mv -vf 'Weldnut/IMG_0629 weldnut.MOV' 'Weldnut/IMG_0631-14 weldnut scan.MOV' 'Weldnut/IMG_0632-14 weldnut scan.MOV' 'Weldnut/IMG_0633-12 weldnut scan.MOV' 'Weldnut/IMG_0630-14 weldnut scan.MOV' 'mov'
 #+end_src
 
-
+** Convert jpeg to png to allow alpha info
+This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
+  mkdir -pv -- png
+  convert './jpeg/IMG_0621 weldnut.jpeg' './png/IMG_0621 weldnut.png'
+  convert './jpeg/IMG_0625 weldnut.jpeg' './png/IMG_0625 weldnut.png'
+  convert './jpeg/IMG_0622 weldnut.jpeg' './png/IMG_0622 weldnut.png'
+  convert './jpeg/IMG_0626 weldnut.jpeg' './png/IMG_0626 weldnut.png'
+  convert './jpeg/IMG_0623 weldnut.jpeg' './png/IMG_0623 weldnut.png'
+  convert './jpeg/IMG_0627 weldnut.jpeg' './png/IMG_0627 weldnut.png'
+  convert './jpeg/IMG_0624 weldnut.jpeg' './png/IMG_0624 weldnut.png'
+  convert './jpeg/IMG_0628 weldnut.jpeg' './png/IMG_0628 weldnut.png'
+#+end_src
+
+* Main code for segmenting the weldnut images
+
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./segment.sh
+  . "${HOME}/BEN2/bin/activate"
 #+end_src
 
 
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
+  from ben2 import BEN_Base
+  from PIL import Image
+  import torch
+  import os
+
+  os.makedirs(name='./mask/',  exist_ok=True)
+
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  model = BEN_Base.from_pretrained("PramaLLC/BEN2")
+  model.to(device).eval()
+
+
+  def slave(name):
+      image = Image.open("./png/" + name)
+      foreground = model.inference(
+          image,
+          refine_foreground=False,
+      )  # Refine foreground is an extract postprocessing step that increases inference time but can improve matting edges. The default value is False.
+
+      foreground.save("./mask/" + name)
+
+
+  for i in os.listdir("./png/"):
+      slave(name=i)
 #+end_src
