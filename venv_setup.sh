@@ -10,7 +10,7 @@ uv pip install \
     '--index-url' 'https://download.pytorch.org/whl/cpu' \
 ;
 
-uv pip install 'ipython' 'opencv-python'
+uv pip install 'ipython' 'opencv-python' matplotlib tikzplotlib jpeg4py opencv-python lmdb pandas scipy loguru
 
 get_repo(){
     DIR_REPO="${HOME}/GITHUB/$('echo' "${1}" | 'sed' 's/^git@github.com://g ; s@^https://github.com/@@g ; s@.git$@@g' )"
@@ -39,3 +39,8 @@ get_repo(){
 
 get_repo 'https://github.com/PramaLLC/BEN2.git'
 uv pip install .
+
+get_repo 'https://github.com/yangchris11/samurai.git'
+cd sam2
+uv pip install .
+uv pip install ".[notebooks]"

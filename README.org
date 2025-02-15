@@ -1,11 +1,8 @@
 * COMMENT WORK SPACE
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :results silent
   (save-buffer)
   (org-babel-tangle)
 #+end_src
-
-#+RESULTS:
-| /mnt/main_root/home/asd/GITHUB/aravindhv10/weldnut/segment.py | /mnt/main_root/home/asd/GITHUB/aravindhv10/weldnut/segment.sh | /mnt/main_root/home/asd/GITHUB/aravindhv10/weldnut/extract.sh | /mnt/main_root/home/asd/GITHUB/aravindhv10/weldnut/venv_setup.sh |
 
 * First, set up the venv
 I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
@@ -34,10 +31,10 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
 
 ** Install other basic packages
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
-  uv pip install 'ipython' 'opencv-python'
+  uv pip install 'ipython' 'opencv-python' matplotlib tikzplotlib jpeg4py opencv-python lmdb pandas scipy loguru
 #+end_src
 
-** Download and install BEN2
+** Function to download code from GITHUB
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   get_repo(){
       DIR_REPO="${HOME}/GITHUB/$('echo' "${1}" | 'sed' 's/^git@github.com://g ; s@^https://github.com/@@g ; s@.git$@@g' )"
@@ -63,9 +60,20 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
           git checkout "${3}"
       fi
   }
+#+end_src
 
+** Download and install BEN2
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   get_repo 'https://github.com/PramaLLC/BEN2.git'
   uv pip install .
+#+end_src
+
+** Download and install SAMURAI
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
+  get_repo 'https://github.com/yangchris11/samurai.git'
+  cd sam2
+  uv pip install .
+  uv pip install ".[notebooks]"
 #+end_src
 
 * Extract and set up the images
