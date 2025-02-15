@@ -1,0 +1,21 @@
+* COMMENT WORK SPACE
+#+begin_src emacs-lisp
+  (save-buffer)
+  (org-babel-tangle)
+#+end_src
+
+#+RESULTS:
+| /mnt/main_root/home/asd/GITHUB/aravindhv10/weldnut/venv_setup.sh |
+
+* First, set up the venv
+I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
+  uv venv "${HOME}/BEN2"
+  . "${HOME}/BEN2/bin/activate"
+  uv pip install \
+      'torch' \
+      'torchvision' \
+      'torchaudio' \
+      '--index-url' 'https://download.pytorch.org/whl/cpu' \
+  ;
+#+end_src
