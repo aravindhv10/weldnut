@@ -24,7 +24,7 @@ def do_infer(image_PIL_input):
     return foreground_PIL_output
 
 
-def slave(path_file_image_input, path_file_mask_output):
+def write_mask(path_file_image_input, path_file_mask_output):
     do_infer(image_PIL_input=Image.open(path_file_image_input)).save(
         path_file_mask_output
     )
@@ -44,10 +44,18 @@ def get_bbox(path_file_mask_input):
     if (r.flatten().shape[0] > 0) and (c.flatten().shape[0] > 0):
         rmin, rmax = r[[0, -1]]
         cmin, cmax = c[[0, -1]]
-        return rmin, cmin, rmax, cmax
+        return rmin.item(), cmin.item(), rmax.item(), cmax.item()
     else:
         return 0, 0, mask_input.shape[0] - 1, mask_input.shape[1] - 1
 
 
-slave(path_file_image_input="./mp4/IMG_0629 weldnut.dir/1.png", path_file_mask_output="./mp4/IMG_0629 weldnut.dir/M_1.png")
-print(get_bbox(path_file_mask_input="./mp4/IMG_0629 weldnut.dir/M_1.png"))
+def image_2_bbox(path_prefix_input):
+    write_mask(
+        path_file_image_input=path_prefix_input + ".png",
+        path_file_mask_output=path_prefix_input + "_M.png",
+    )
+    res = get_bbox(path_file_mask_input=path_prefix_input + "_M.png")
+    print(res)
+
+
+image_2_bbox(path_prefix_input="./mp4/IMG_0629 weldnut.dir/1")
