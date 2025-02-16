@@ -1,8 +1,16 @@
-* COMMENT WORK SPACE
+* WORK SPACE
+
+** elisp
 #+begin_src emacs-lisp :results silent
   (save-buffer)
   (org-babel-tangle)
+  (async-shell-command "./tmp.sh" "log" "err")
 #+end_src
+
+** shell
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./tmp.sh
+#+end_src
+
 
 * First, set up the venv
 I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
@@ -91,7 +99,7 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
 #+end_src
 
 ** Organize images and videos
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
   mkdir jpeg mov
 
   mv -vf 'Weldnut/IMG_0621 weldnut.jpeg' 'Weldnut/IMG_0628 weldnut.jpeg' 'Weldnut/IMG_0622 weldnut.jpeg' 'Weldnut/IMG_0623 weldnut.jpeg' 'Weldnut/IMG_0624 weldnut.jpeg' 'Weldnut/IMG_0625 weldnut.jpeg' 'Weldnut/IMG_0626 weldnut.jpeg' 'Weldnut/IMG_0627 weldnut.jpeg' 'jpeg'
@@ -101,7 +109,7 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
 
 ** Convert jpeg to png to allow alpha info
 This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./extract.sh
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
   mkdir -pv -- png
   convert './jpeg/IMG_0621 weldnut.jpeg' './png/IMG_0621 weldnut.png'
   convert './jpeg/IMG_0625 weldnut.jpeg' './png/IMG_0625 weldnut.png'
@@ -212,3 +220,49 @@ This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
 #+end_src
 
 These produce almost perfect semantic segmentation masks, object detection at this stage is trivial.
+
+* Track in video
+
+** Convert videos to more standard format
+
+*** Function to convert
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
+  W(){
+      ffmpeg -i "mov/${1}.MOV" "mp4/${1}.mp4" -c:v libx264
+  }
+#+end_src
+
+*** Convert all videos
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
+  W 'IMG_0629 weldnut'
+  W 'IMG_0630-14 weldnut scan'
+  W 'IMG_0631-14 weldnut scan'
+  W 'IMG_0632-14 weldnut scan'
+  W 'IMG_0633-12 weldnut scan'
+#+end_src
+
+** Extract first frame
+
+*** Function to extract
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
+  W(){
+      mkdir -pv -- "mp4/${1}.dir"
+      ffmpeg -i "mp4/${1}.mp4" -r 1 "mp4/${1}.dir/%d.png" 
+  }
+#+end_src
+
+*** get from all videos
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
+  W 'IMG_0629 weldnut'
+  W 'IMG_0630-14 weldnut scan'
+  W 'IMG_0631-14 weldnut scan'
+  W 'IMG_0632-14 weldnut scan'
+  W 'IMG_0633-12 weldnut scan'
+#+end_src
+
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./track.sh
+  . "${HOME}/BEN2/bin/activate"
+  python3 "${HOME}/GITHUB/yangchris11/samurai/scripts/demo.py"
+  --video_path <your_video.mp4> --txt_path <path_to_first_frame_bbox.txt>
+
+#+end_src
