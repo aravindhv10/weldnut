@@ -14,27 +14,28 @@ print(os.listdir("."))
   os.system('apt install squashfs-tools')
 #+end_src
 
-#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./4.py
   import os
   os.system('unsquashfs "weldnut.squashfs-zstd" ; mv squashfs-root/weldnut ./ ; rmdir squashfs-root')
 #+end_src
 
-#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./5.py
   import os
   os.system('mv weldnut "${HOME}"')
 #+end_src
 
-#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./6.py
   import os
   os.chdir(os.environ.get('HOME'))
 #+end_src
 
-#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./7.py
   import os
   print(os.environ.get('HOME'))
 #+end_src
 
-#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./8.py
+  import os
   os.system(
       """
   get_repo(){
@@ -64,19 +65,36 @@ print(os.listdir("."))
 
   get_repo 'https://github.com/yangchris11/samurai.git'
   cd sam2
-  uv pip install .
-  uv pip install ".[notebooks]"
+  pip3 install .
+  pip3 install ".[notebooks]"
   cd checkpoints
   ./download_ckpts.sh
   """
   )
 #+end_src
 
-#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
-import os
-import glob
-os.chdir(os.environ.get('HOME'))
-print(glob.glob('./weldnut/*'))
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./9.py
+  import os
+  import glob
+
+  os.chdir(os.environ.get("HOME"))
+  os.system("""
+  VIDEO_FILE="${HOME}/weldnut/mp4/IMG_0629 weldnut.mp4"
+  TEXT_BBOX_FILE="${HOME}/weldnut/mp4/IMG_0629 weldnut.dir/1_bbox.txt"
+  cd "${HOME}/GITHUB/yangchris11/samurai"
+  python3 "${HOME}/GITHUB/yangchris11/samurai/scripts/demo.py" \
+      --video_path "${VIDEO_FILE}" \
+      --txt_path "${TEXT_BBOX_FILE}" \
+  ;
+  """)
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./10.py
+  %cd "/root/GITHUB/yangchris11/samurai"
+  !python3 "${HOME}/GITHUB/yangchris11/samurai/scripts/demo.py" \
+      --video_path /root/weldnut/mp4/IMG_0629 weldnut.mp4 \
+      --txt_path /root/weldnut/mp4/IMG_0629 weldnut.dir/1_bbox.txt \
+  ;
 #+end_src
 
 * COMMENT SAMPLE

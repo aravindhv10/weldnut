@@ -284,6 +284,10 @@ These produce almost perfect semantic segmentation masks, object detection at th
 
 
   image_2_bbox(path_prefix_input="./mp4/IMG_0629 weldnut.dir/1")
+  image_2_bbox(path_prefix_input="./mp4/IMG_0630-14 weldnut scan.dir/1")
+  image_2_bbox(path_prefix_input="./mp4/IMG_0631-14 weldnut scan.dir/1")
+  image_2_bbox(path_prefix_input="./mp4/IMG_0632-14 weldnut scan.dir/1")
+  image_2_bbox(path_prefix_input="./mp4/IMG_0633-12 weldnut scan.dir/1")
 #+end_src
 
 * Track in video
