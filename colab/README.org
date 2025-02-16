@@ -1,0 +1,88 @@
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./1.py
+from google.colab import drive
+drive.mount('/gdrive')
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./2.py
+import os
+os.chdir("/gdrive/MyDrive/APPLIX")
+print(os.listdir("."))
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./3.py
+  import os
+  os.system('apt install squashfs-tools')
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+  import os
+  os.system('unsquashfs "weldnut.squashfs-zstd" ; mv squashfs-root/weldnut ./ ; rmdir squashfs-root')
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+  import os
+  os.system('mv weldnut "${HOME}"')
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+  import os
+  os.chdir(os.environ.get('HOME'))
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+  import os
+  print(os.environ.get('HOME'))
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+  os.system(
+      """
+  get_repo(){
+      DIR_REPO="${HOME}/GITHUB/$('echo' "${1}" | 'sed' 's/^git@github.com://g ; s@^https://github.com/@@g ; s@.git$@@g' )"
+      DIR_BASE="$('dirname' '--' "${DIR_REPO}")"
+
+      mkdir -pv -- "${DIR_BASE}"
+      cd "${DIR_BASE}"
+      git clone "${1}"
+      cd "${DIR_REPO}"
+
+      if test "${#}" '-ge' '2'
+      then
+          git switch "${2}"
+      else
+          git switch main
+      fi
+
+      git pull
+      git submodule update --recursive --init
+
+      if test "${#}" '-ge' '3'
+      then
+          git checkout "${3}"
+      fi
+  }
+
+  get_repo 'https://github.com/yangchris11/samurai.git'
+  cd sam2
+  uv pip install .
+  uv pip install ".[notebooks]"
+  cd checkpoints
+  ./download_ckpts.sh
+  """
+  )
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+import os
+import glob
+os.chdir(os.environ.get('HOME'))
+print(glob.glob('./weldnut/*'))
+#+end_src
+
+* COMMENT SAMPLE
+
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./.sh
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./.py
+#+end_src
