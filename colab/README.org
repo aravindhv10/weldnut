@@ -65,15 +65,28 @@ print(os.listdir("."))
 
   get_repo 'https://github.com/yangchris11/samurai.git'
   cd sam2
-  pip3 install .
-  pip3 install ".[notebooks]"
+  pip3 install opencv-python matplotlib tikzplotlib jpeg4py opencv-python lmdb pandas scipy loguru
+  pip3 install . 2>&1 > /root/log
+  pip3 install ".[notebooks]" 2>&1 >> /root/log
   cd checkpoints
-  ./download_ckpts.sh
+  ./download_ckpts.sh 2>&1 >> /root/log
   """
   )
 #+end_src
 
-#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./9.py
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./9.sh
+  !cat /root/log
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./10.sh
+  %cd "/root/GITHUB/yangchris11/samurai"
+  !python3 "${HOME}/GITHUB/yangchris11/samurai/scripts/demo.py"      \
+      --video_path '/root/weldnut/mp4/IMG_0629 weldnut.mp4'          \
+      --txt_path '/root/weldnut/mp4/IMG_0629 weldnut.dir/1_bbox.txt' \
+  ;
+#+end_src
+
+#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./10.py
   import os
   import glob
 
@@ -87,14 +100,6 @@ print(os.listdir("."))
       --txt_path "${TEXT_BBOX_FILE}" \
   ;
   """)
-#+end_src
-
-#+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./10.py
-  %cd "/root/GITHUB/yangchris11/samurai"
-  !python3 "${HOME}/GITHUB/yangchris11/samurai/scripts/demo.py" \
-      --video_path /root/weldnut/mp4/IMG_0629 weldnut.mp4 \
-      --txt_path /root/weldnut/mp4/IMG_0629 weldnut.dir/1_bbox.txt \
-  ;
 #+end_src
 
 * COMMENT SAMPLE
