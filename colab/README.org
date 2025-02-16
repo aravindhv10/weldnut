@@ -80,10 +80,7 @@ print(os.listdir("."))
 
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./10.sh
   %cd "/root/GITHUB/yangchris11/samurai"
-  !python3 "${HOME}/GITHUB/yangchris11/samurai/scripts/demo.py"      \
-      --video_path '/root/weldnut/mp4/IMG_0629 weldnut.mp4'          \
-      --txt_path '/root/weldnut/mp4/IMG_0629 weldnut.dir/1_bbox.txt' \
-  ;
+  !python3 "/root/GITHUB/yangchris11/samurai/scripts/demo.py" --video_path '/root/weldnut/mp4/IMG_0629 weldnut.mp4' --txt_path '/root/weldnut/mp4/IMG_0629 weldnut.dir/1_bbox.txt'
 #+end_src
 
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./10.py
