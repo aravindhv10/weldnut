@@ -54,8 +54,9 @@ def image_2_bbox(path_prefix_input):
         path_file_image_input=path_prefix_input + ".png",
         path_file_mask_output=path_prefix_input + "_M.png",
     )
-    res = get_bbox(path_file_mask_input=path_prefix_input + "_M.png")
-    print(res)
+    y1, x1, y2, x2 = get_bbox(path_file_mask_input=path_prefix_input + "_M.png")
+    with open(path_prefix_input + "_bbox.txt", "w", encoding="utf-8") as f:
+        f.write(str(x1) + "," + str(y1) + "," + str(x2) + "," + str(y2))
 
 
 image_2_bbox(path_prefix_input="./mp4/IMG_0629 weldnut.dir/1")
