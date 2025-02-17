@@ -10,7 +10,22 @@ uv pip install \
     '--index-url' 'https://download.pytorch.org/whl/cpu' \
 ;
 
-uv pip install 'ipython' 'opencv-python' matplotlib tikzplotlib jpeg4py opencv-python lmdb pandas scipy loguru
+uv pip install \
+    "hydra-core" \
+    "iopath" \
+    "numpy" \
+    "pillow" \
+    "tqdm" \
+    'ipython' \
+    'jpeg4py' \
+    'lmdb' \
+    'loguru' \
+    'matplotlib' \
+    'opencv-python' \
+    'pandas' \
+    'scipy' \
+    'tikzplotlib' \
+;
 
 get_repo(){
     DIR_REPO="${HOME}/GITHUB/$('echo' "${1}" | 'sed' 's/^git@github.com://g ; s@^https://github.com/@@g ; s@.git$@@g' )"
@@ -39,6 +54,11 @@ get_repo(){
 
 get_repo 'https://github.com/PramaLLC/BEN2.git'
 uv pip install .
+
+get_repo 'https://github.com/facebookresearch/sam2.git'
+
+cd "${HOME}/GITHUB/facebookresearch/sam2/checkpoints"
+(test -e sam2.1_hiera_base_plus.pt && test -e sam2.1_hiera_large.pt && test -e sam2.1_hiera_small.pt && test -e sam2.1_hiera_tiny.pt) || './download_ckpts.sh'
 
 get_repo 'https://github.com/yangchris11/samurai.git'
 cd sam2
