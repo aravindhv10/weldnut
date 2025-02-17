@@ -42,6 +42,7 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
       'pandas' \
       'scipy' \
       'tikzplotlib' \
+      'ultralytics' \
   ;
 #+end_src
 
@@ -56,7 +57,6 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
       '--index-url' 'https://download.pytorch.org/whl/cpu' \
   ;
 #+end_src
-
 
 ** Function to download code from GITHUB
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
@@ -84,6 +84,17 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
           git checkout "${3}"
       fi
   }
+#+end_src
+
+** Download ultralytics sam checkpoints
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
+  mkdir -pv -- "${HOME}/MODEL_CHECKPOINTS/ULTRALYTICS/SAM2/"
+  cd "${HOME}/MODEL_CHECKPOINTS/ULTRALYTICS/SAM2/"
+
+  aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_t.pt'
+  aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_s.pt'
+  aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_b.pt'
+  aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_l.pt'
 #+end_src
 
 ** Download and install BEN2
@@ -389,10 +400,14 @@ These produce almost perfect semantic segmentation masks, object detection at th
 
   checkpoint = "./checkpoints/sam2.1_hiera_large.pt"
   model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
-  predictor = SAM2ImagePredictor(build_sam2(model_cfg, PATH_FILE_MODEL_SAM_LARGE, device='cpu'))
+  predictor = SAM2ImagePredictor(
+      build_sam2(model_cfg, PATH_FILE_MODEL_SAM_LARGE, device="cpu")
+  )
 
-  # with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-  #     predictor.set_image(<your_image>)
-  #     masks, _, _ = predictor.predict(<input_prompts>)
+  with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
+      predictor.set_image(
+          PATH_DIR_HOME + "/GITHUB/aravindhv10/weldnut/mp4/IMG_0629 weldnut.dir/1.png"
+      )
+      masks, _, _ = predictor.predict("nut")
 #+end_src
 
