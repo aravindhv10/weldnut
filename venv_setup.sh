@@ -4,13 +4,6 @@ uv venv "${HOME}/BEN2"
 . "${HOME}/BEN2/bin/activate"
 
 uv pip install \
-    'torch' \
-    'torchvision' \
-    'torchaudio' \
-    '--index-url' 'https://download.pytorch.org/whl/cpu' \
-;
-
-uv pip install \
     "hydra-core" \
     "iopath" \
     "numpy" \
@@ -25,6 +18,13 @@ uv pip install \
     'pandas' \
     'scipy' \
     'tikzplotlib' \
+;
+
+uv pip install \
+    'torch' \
+    'torchvision' \
+    'torchaudio' \
+    '--index-url' 'https://download.pytorch.org/whl/cpu' \
 ;
 
 get_repo(){

@@ -25,18 +25,6 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
   . "${HOME}/BEN2/bin/activate"
 #+end_src
 
-** Install torch
-
-*** For cpu
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
-  uv pip install \
-      'torch' \
-      'torchvision' \
-      'torchaudio' \
-      '--index-url' 'https://download.pytorch.org/whl/cpu' \
-  ;
-#+end_src
-
 ** Install other basic packages
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   uv pip install \
@@ -56,6 +44,19 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
       'tikzplotlib' \
   ;
 #+end_src
+
+** Install torch
+
+*** For cpu
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
+  uv pip install \
+      'torch' \
+      'torchvision' \
+      'torchaudio' \
+      '--index-url' 'https://download.pytorch.org/whl/cpu' \
+  ;
+#+end_src
+
 
 ** Function to download code from GITHUB
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
@@ -388,7 +389,7 @@ These produce almost perfect semantic segmentation masks, object detection at th
 
   checkpoint = "./checkpoints/sam2.1_hiera_large.pt"
   model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
-  predictor = SAM2ImagePredictor(build_sam2(model_cfg, PATH_FILE_MODEL_SAM_LARGE))
+  predictor = SAM2ImagePredictor(build_sam2(model_cfg, PATH_FILE_MODEL_SAM_LARGE, device='cpu'))
 
   # with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
   #     predictor.set_image(<your_image>)
