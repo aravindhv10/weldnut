@@ -18,6 +18,7 @@ uv pip install \
     'pandas' \
     'scipy' \
     'tikzplotlib' \
+    'ultralytics' \
 ;
 
 uv pip install \
@@ -55,14 +56,10 @@ get_repo(){
 get_repo 'https://github.com/PramaLLC/BEN2.git'
 uv pip install .
 
-get_repo 'https://github.com/facebookresearch/sam2.git'
+mkdir -pv -- "${HOME}/MODEL_CHECKPOINTS/ULTRALYTICS/SAM2/"
+cd "${HOME}/MODEL_CHECKPOINTS/ULTRALYTICS/SAM2/"
 
-cd "${HOME}/GITHUB/facebookresearch/sam2/checkpoints"
-(test -e sam2.1_hiera_base_plus.pt && test -e sam2.1_hiera_large.pt && test -e sam2.1_hiera_small.pt && test -e sam2.1_hiera_tiny.pt) || './download_ckpts.sh'
-
-get_repo 'https://github.com/yangchris11/samurai.git'
-cd sam2
-uv pip install .
-uv pip install ".[notebooks]"
-cd checkpoints
-./download_ckpts.sh
+aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_t.pt'
+aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_s.pt'
+aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_b.pt'
+aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_l.pt'

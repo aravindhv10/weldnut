@@ -1,16 +1,15 @@
-* WORK SPACE
+* Introduction and approach
 
-** elisp
-#+begin_src emacs-lisp :results silent
-  (save-buffer)
-  (org-babel-tangle)
-  ;; (async-shell-command "./tmp.sh" "log" "err")
-#+end_src
+** object detection for nuts
+I use [[https://github.com/PramaLLC/BEN2][BEN2]] trained for [[https://paperswithcode.com/dataset/dis5k][Dichotomous Image Segmentation]] to segment the nuts from the clear background.
+This works for segmenting in images and the video where the nut is in clean background
+but does not work for other videos where there are significant parts around the nuts.
 
-** shell
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./tmp.sh
-#+end_src
-
+** Object tracking in videos
+I was able to get moderate performance in tracking nuts in the clean video using the
+[[https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2_t.pt][tiny model]] of [[https://docs.ultralytics.com/models/sam-2/][SAM-2.1 as implemented in YOLO library]].
+Performance in other videos were not appropriate with tiny model and require larger models
+which donot run fast enough.
 
 * First, set up the venv
 I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
@@ -49,6 +48,11 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
 ** Install torch
 
 *** For cpu
+I used the CPU version of torch as I did not have access to GPU for this work,
+but you can perhaps use GPU version for torch.
+The CPU version is sufficient to run BEN2 and SAM-2.1 tiny models
+at inference speeds of around 1 second per image.
+
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   uv pip install \
       'torch' \
@@ -58,7 +62,9 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
   ;
 #+end_src
 
-** Function to download code from GITHUB
+** Download and install BEN2
+
+*** Function to download code from GITHUB
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   get_repo(){
       DIR_REPO="${HOME}/GITHUB/$('echo' "${1}" | 'sed' 's/^git@github.com://g ; s@^https://github.com/@@g ; s@.git$@@g' )"
@@ -86,6 +92,12 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
   }
 #+end_src
 
+*** Download and install BEN2
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
+  get_repo 'https://github.com/PramaLLC/BEN2.git'
+  uv pip install .
+#+end_src
+
 ** Download ultralytics sam checkpoints
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   mkdir -pv -- "${HOME}/MODEL_CHECKPOINTS/ULTRALYTICS/SAM2/"
@@ -97,13 +109,7 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
   aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_l.pt'
 #+end_src
 
-** Download and install BEN2
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
-  get_repo 'https://github.com/PramaLLC/BEN2.git'
-  uv pip install .
-#+end_src
-
-** Download SAM2
+** COMMENT Download SAM2
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   get_repo 'https://github.com/facebookresearch/sam2.git'
 
@@ -111,7 +117,7 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
   (test -e sam2.1_hiera_base_plus.pt && test -e sam2.1_hiera_large.pt && test -e sam2.1_hiera_small.pt && test -e sam2.1_hiera_tiny.pt) || './download_ckpts.sh'
 #+end_src
 
-** Download and install SAMURAI
+** COMMENT Download and install SAMURAI
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./venv_setup.sh
   get_repo 'https://github.com/yangchris11/samurai.git'
   cd sam2
@@ -135,11 +141,9 @@ I am using [[https://github.com/astral-sh/uv][uv]] as it is very fast.
 
 ** Organize images and videos
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
-  mkdir jpeg mov
-
-  mv -vf 'Weldnut/IMG_0621 weldnut.jpeg' 'Weldnut/IMG_0628 weldnut.jpeg' 'Weldnut/IMG_0622 weldnut.jpeg' 'Weldnut/IMG_0623 weldnut.jpeg' 'Weldnut/IMG_0624 weldnut.jpeg' 'Weldnut/IMG_0625 weldnut.jpeg' 'Weldnut/IMG_0626 weldnut.jpeg' 'Weldnut/IMG_0627 weldnut.jpeg' 'jpeg'
-
-  mv -vf 'Weldnut/IMG_0629 weldnut.MOV' 'Weldnut/IMG_0631-14 weldnut scan.MOV' 'Weldnut/IMG_0632-14 weldnut scan.MOV' 'Weldnut/IMG_0633-12 weldnut scan.MOV' 'Weldnut/IMG_0630-14 weldnut scan.MOV' 'mov'
+  mkdir -pv -- jpeg mov
+  mv -vf -- 'Weldnut/IMG_0621 weldnut.jpeg' 'Weldnut/IMG_0628 weldnut.jpeg' 'Weldnut/IMG_0622 weldnut.jpeg' 'Weldnut/IMG_0623 weldnut.jpeg' 'Weldnut/IMG_0624 weldnut.jpeg' 'Weldnut/IMG_0625 weldnut.jpeg' 'Weldnut/IMG_0626 weldnut.jpeg' 'Weldnut/IMG_0627 weldnut.jpeg' 'jpeg'
+  mv -vf -- 'Weldnut/IMG_0629 weldnut.MOV' 'Weldnut/IMG_0631-14 weldnut scan.MOV' 'Weldnut/IMG_0632-14 weldnut scan.MOV' 'Weldnut/IMG_0633-12 weldnut scan.MOV' 'Weldnut/IMG_0630-14 weldnut scan.MOV' 'mov'
 #+end_src
 
 ** Convert jpeg to png to allow alpha info
@@ -156,9 +160,9 @@ This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
   convert './jpeg/IMG_0628 weldnut.jpeg' './png/IMG_0628 weldnut.png'
 #+end_src
 
-* Main code for segmenting the weldnut images
+* Main code for segmenting the weldnut images and object detection
 
-** Shell script to 
+** COMMENT Shell script to 
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./segment.sh
   . "${HOME}/BEN2/bin/activate"
   python3 ./segment.py
@@ -232,7 +236,7 @@ This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
       visualize(i)
 #+end_src
 
-** Misc code
+** Code to grow mask before doing object detection
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./segment.py
   def grow_mask(name):
       segm = cv2.imread("./mask/" + name, cv2.IMREAD_UNCHANGED)
@@ -255,6 +259,45 @@ This is done using [[http://www.graphicsmagick.org/][graphicsmagic]]
 #+end_src
 
 These produce almost perfect semantic segmentation masks, object detection at this stage is trivial.
+
+* Track in video
+
+** Convert videos to more standard format
+
+*** Function to convert
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
+  W(){
+      ffmpeg -i "mov/${1}.MOV" "mp4/${1}.mp4" -c:v libx264
+  }
+#+end_src
+
+*** Convert all videos
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
+  W 'IMG_0629 weldnut'
+  W 'IMG_0630-14 weldnut scan'
+  W 'IMG_0631-14 weldnut scan'
+  W 'IMG_0632-14 weldnut scan'
+  W 'IMG_0633-12 weldnut scan'
+#+end_src
+
+** Extract first frame
+
+*** Function to extract
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
+  W(){
+      mkdir -pv -- "mp4/${1}.dir"
+      ffmpeg -i "mp4/${1}.mp4" -r 1 "mp4/${1}.dir/%d.png" 
+  }
+#+end_src
+
+*** get from all videos
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
+  W 'IMG_0629 weldnut'
+  W 'IMG_0630-14 weldnut scan'
+  W 'IMG_0631-14 weldnut scan'
+  W 'IMG_0632-14 weldnut scan'
+  W 'IMG_0633-12 weldnut scan'
+#+end_src
 
 * Code to extract bounding box
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./bbox.py
@@ -327,45 +370,15 @@ These produce almost perfect semantic segmentation masks, object detection at th
   image_2_bbox(path_prefix_input="./mp4/IMG_0633-12 weldnut scan.dir/1")
 #+end_src
 
-* Track in video
+* YOLO SAM for tracking nut in video
 
-** Convert videos to more standard format
-
-*** Function to convert
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
-  W(){
-      ffmpeg -i "mov/${1}.MOV" "mp4/${1}.mp4" -c:v libx264
-  }
+Yolo provides CLI tool which can be used to directly obtain object tracking masks on the video.
+#+begin_src sh :shebang #!/bin/sh :results output :tangle ./tmp.sh
+  yolo predict model=sam2.1_t.pt source=1.mp4
 #+end_src
+Perhaps, we can get better results using [[https://github.com/yangchris11/samurai][samurai]] but I did not have the compute power or time to test this.
 
-*** Convert all videos
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
-  W 'IMG_0629 weldnut'
-  W 'IMG_0630-14 weldnut scan'
-  W 'IMG_0631-14 weldnut scan'
-  W 'IMG_0632-14 weldnut scan'
-  W 'IMG_0633-12 weldnut scan'
-#+end_src
-
-** Extract first frame
-
-*** Function to extract
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
-  W(){
-      mkdir -pv -- "mp4/${1}.dir"
-      ffmpeg -i "mp4/${1}.mp4" -r 1 "mp4/${1}.dir/%d.png" 
-  }
-#+end_src
-
-*** get from all videos
-#+begin_src sh :shebang #!/bin/sh :results output :tangle ./convert.sh
-  W 'IMG_0629 weldnut'
-  W 'IMG_0630-14 weldnut scan'
-  W 'IMG_0631-14 weldnut scan'
-  W 'IMG_0632-14 weldnut scan'
-  W 'IMG_0633-12 weldnut scan'
-#+end_src
-
+* COMMENT Samurai
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./track.sh
   . "${HOME}/BEN2/bin/activate"
   VIDEO_FILE="$(realpath "${1}")"
@@ -379,7 +392,7 @@ These produce almost perfect semantic segmentation masks, object detection at th
 
 ./track.sh 'mp4/IMG_0629 weldnut.mp4' 'mp4/IMG_0629 weldnut.dir/1_bbox.txt'
 
-* SAM2 for segmentation and tracking
+* COMMENT SAM2 for segmentation and tracking
 
 #+begin_src python :shebang #!/usr/bin/python3 :results output :tangle ./sam2segmenttrack.py
   import torch
@@ -411,3 +424,11 @@ These produce almost perfect semantic segmentation masks, object detection at th
       masks, _, _ = predictor.predict("nut")
 #+end_src
 
+* COMMENT WORK SPACE
+
+** elisp
+#+begin_src emacs-lisp :results silent
+  (save-buffer)
+  (org-babel-tangle)
+  ;; (async-shell-command "./tmp.sh" "log" "err")
+#+end_src
