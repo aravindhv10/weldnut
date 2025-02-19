@@ -1,0 +1,395 @@
+% Created 2025-02-19 Wed 21:27
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\date{\today}
+\title{}
+\hypersetup{
+ pdfauthor={},
+ pdftitle={},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 29.4 (Org mode 9.8-pre)}, 
+ pdflang={English}}
+\begin{document}
+
+\tableofcontents
+
+\section{Introduction and approach}
+\label{sec:org63ff334}
+
+\subsection{object detection for nuts}
+\label{sec:org48ecb25}
+I use \href{https://github.com/PramaLLC/BEN2}{BEN2} trained for \href{https://paperswithcode.com/dataset/dis5k}{Dichotomous Image Segmentation} to segment the nuts from the clear background.
+This works for segmenting in images and the video where the nut is in clean background
+but does not work for other videos where there are significant parts around the nuts.
+\subsection{Object tracking in videos}
+\label{sec:org52f2fef}
+I was able to get moderate performance in tracking nuts in the clean video using the
+\href{https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2\_t.pt}{tiny model} of \href{https://docs.ultralytics.com/models/sam-2/}{SAM-2.1 as implemented in YOLO library}.
+Performance in other videos were not appropriate with tiny model and require larger models
+which donot run fast enough.
+\section{First, set up the venv}
+\label{sec:orgfaf5d57}
+I am using \href{https://github.com/astral-sh/uv}{uv} as it is very fast.
+\subsection{Create venv}
+\label{sec:org7da2084}
+\begin{verbatim}
+uv venv "${HOME}/BEN2"
+\end{verbatim}
+\subsection{Activate venv}
+\label{sec:orge0f9de0}
+\begin{verbatim}
+. "${HOME}/BEN2/bin/activate"
+\end{verbatim}
+\subsection{Install other basic packages}
+\label{sec:orgef8afae}
+\begin{verbatim}
+uv pip install \
+    "hydra-core" \
+    "iopath" \
+    "numpy" \
+    "pillow" \
+    "tqdm" \
+    'ipython' \
+    'jpeg4py' \
+    'lmdb' \
+    'loguru' \
+    'matplotlib' \
+    'opencv-python' \
+    'pandas' \
+    'scipy' \
+    'tikzplotlib' \
+    'ultralytics' \
+;
+\end{verbatim}
+\subsection{Install torch}
+\label{sec:orgc1575ae}
+
+\subsubsection{For cpu}
+\label{sec:org27c2f16}
+I used the CPU version of torch as I did not have access to GPU for this work,
+but you can perhaps use GPU version for torch.
+The CPU version is sufficient to run BEN2 and SAM-2.1 tiny models
+at inference speeds of around 1 second per image.
+
+\begin{verbatim}
+uv pip install \
+    'torch' \
+    'torchvision' \
+    'torchaudio' \
+    '--index-url' 'https://download.pytorch.org/whl/cpu' \
+;
+\end{verbatim}
+\subsection{Download and install BEN2}
+\label{sec:orgb4c2b05}
+
+\subsubsection{Function to download code from GITHUB}
+\label{sec:org7fef2b3}
+\begin{verbatim}
+get_repo(){
+    DIR_REPO="${HOME}/GITHUB/$('echo' "${1}" | 'sed' 's/^git@github.com://g ; s@^https://github.com/@@g ; s@.git$@@g' )"
+    DIR_BASE="$('dirname' '--' "${DIR_REPO}")"
+
+    mkdir -pv -- "${DIR_BASE}"
+    cd "${DIR_BASE}"
+    git clone "${1}"
+    cd "${DIR_REPO}"
+
+    if test "${#}" '-ge' '2'
+    then
+        git switch "${2}"
+    else
+        git switch main
+    fi
+
+    git pull
+    git submodule update --recursive --init
+
+    if test "${#}" '-ge' '3'
+    then
+        git checkout "${3}"
+    fi
+}
+\end{verbatim}
+\subsubsection{Download and install BEN2}
+\label{sec:orgbad30ee}
+\begin{verbatim}
+get_repo 'https://github.com/PramaLLC/BEN2.git'
+uv pip install .
+\end{verbatim}
+\subsection{Download ultralytics sam checkpoints}
+\label{sec:org06adfd3}
+\begin{verbatim}
+mkdir -pv -- "${HOME}/MODEL_CHECKPOINTS/ULTRALYTICS/SAM2/"
+cd "${HOME}/MODEL_CHECKPOINTS/ULTRALYTICS/SAM2/"
+
+aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_t.pt'
+aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_s.pt'
+aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_b.pt'
+aria2c -c -x16 -j16 'https://github.com/ultralytics/assets/releases/download/v8.3.0/sam2.1_l.pt'
+\end{verbatim}
+\section{Extract and set up the images}
+\label{sec:org82282d9}
+
+\subsection{Extract the zip}
+\label{sec:org93a8b43}
+\begin{verbatim}
+unzip 'Weldnut.zip'
+\end{verbatim}
+\subsection{Some cleanups}
+\label{sec:orgb603262}
+\begin{verbatim}
+rm -vrf -- '__MACOSX'
+\end{verbatim}
+\subsection{Organize images and videos}
+\label{sec:org18c5db6}
+\begin{verbatim}
+mkdir -pv -- jpeg mov
+mv -vf -- 'Weldnut/IMG_0621 weldnut.jpeg' 'Weldnut/IMG_0628 weldnut.jpeg' 'Weldnut/IMG_0622 weldnut.jpeg' 'Weldnut/IMG_0623 weldnut.jpeg' 'Weldnut/IMG_0624 weldnut.jpeg' 'Weldnut/IMG_0625 weldnut.jpeg' 'Weldnut/IMG_0626 weldnut.jpeg' 'Weldnut/IMG_0627 weldnut.jpeg' 'jpeg'
+mv -vf -- 'Weldnut/IMG_0629 weldnut.MOV' 'Weldnut/IMG_0631-14 weldnut scan.MOV' 'Weldnut/IMG_0632-14 weldnut scan.MOV' 'Weldnut/IMG_0633-12 weldnut scan.MOV' 'Weldnut/IMG_0630-14 weldnut scan.MOV' 'mov'
+\end{verbatim}
+\subsection{Convert jpeg to png to allow alpha info}
+\label{sec:org3bfa1f9}
+This is done using \href{http://www.graphicsmagick.org/}{graphicsmagic}
+\begin{verbatim}
+mkdir -pv -- png
+convert './jpeg/IMG_0621 weldnut.jpeg' './png/IMG_0621 weldnut.png'
+convert './jpeg/IMG_0625 weldnut.jpeg' './png/IMG_0625 weldnut.png'
+convert './jpeg/IMG_0622 weldnut.jpeg' './png/IMG_0622 weldnut.png'
+convert './jpeg/IMG_0626 weldnut.jpeg' './png/IMG_0626 weldnut.png'
+convert './jpeg/IMG_0623 weldnut.jpeg' './png/IMG_0623 weldnut.png'
+convert './jpeg/IMG_0627 weldnut.jpeg' './png/IMG_0627 weldnut.png'
+convert './jpeg/IMG_0624 weldnut.jpeg' './png/IMG_0624 weldnut.png'
+convert './jpeg/IMG_0628 weldnut.jpeg' './png/IMG_0628 weldnut.png'
+\end{verbatim}
+\section{Main code for segmenting the weldnut images and object detection}
+\label{sec:org7da1484}
+
+\subsection{Main python code}
+\label{sec:orgb62e9d4}
+
+\subsubsection{Import the libraries}
+\label{sec:orgc67b5db}
+\begin{verbatim}
+from PIL import Image
+from ben2 import BEN_Base
+import cv2
+import numpy as np
+import os
+import torch
+\end{verbatim}
+\subsection{Create directory to store the output files}
+\label{sec:orgfb33079}
+\begin{verbatim}
+os.makedirs(name='./mask/',  exist_ok=True)
+\end{verbatim}
+\subsection{Device to run the model on}
+\label{sec:orgcbbc7ef}
+\begin{verbatim}
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = BEN_Base.from_pretrained("PramaLLC/BEN2")
+model.to(device).eval()
+\end{verbatim}
+\subsection{Main function to do the segmentation}
+\label{sec:org78b3997}
+\begin{verbatim}
+def slave(name):
+    image = Image.open("./png/" + name)
+    foreground = model.inference(
+        image,
+        refine_foreground=False,
+    )  # Refine foreground is an extract postprocessing step that increases inference time but can improve matting edges. The default value is False.
+
+    foreground.save("./mask/" + name)
+\end{verbatim}
+\subsection{Segment all the input images}
+\label{sec:orgdb003fb}
+\begin{verbatim}
+for i in os.listdir("./png/"):
+    slave(name=i)
+\end{verbatim}
+\subsection{Extract the mask from RGBA images}
+\label{sec:orga413a37}
+\begin{verbatim}
+def process_segment(img):
+    return (img[:, :, 3] > 127).astype(np.uint8)
+\end{verbatim}
+\subsection{Simple check to see the masks are good}
+\label{sec:orga4e9117}
+\begin{verbatim}
+def visualize(name):
+    orig = cv2.imread("./png/" + name, cv2.IMREAD_COLOR)
+    segm = cv2.imread("./mask/" + name, cv2.IMREAD_UNCHANGED)
+    segm = process_segment(segm)
+    masked = orig.copy()
+    for i in range(3):
+        masked[:, :, i] = orig[:, :, i] * segm
+    final_array = np.array([orig, masked]).reshape((orig.shape[0]*2, orig.shape[1], 3))
+    print(final_array.shape)
+
+    os.makedirs(name="./vis/", exist_ok=True)
+    cv2.imwrite("./vis/" + name, final_array)
+
+
+for i in os.listdir("./png/"):
+    visualize(i)
+\end{verbatim}
+\subsection{Code to grow mask before doing object detection}
+\label{sec:orgf6d4a60}
+\begin{verbatim}
+def grow_mask(name):
+    segm = cv2.imread("./mask/" + name, cv2.IMREAD_UNCHANGED)
+    segm = process_segment(segm) * 255
+    kernel1 = np.array(
+        [
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+        ]
+    )
+    segm = cv2.filter2D(src=segm, ddepth=-1, kernel=kernel1)
+    cv2.imwrite("./mask/B_" + name, segm)
+
+
+for i in os.listdir("./png/"):
+    grow_mask(i)
+\end{verbatim}
+
+These produce almost perfect semantic segmentation masks, object detection at this stage is trivial.
+\section{Track in video}
+\label{sec:org65b70b0}
+
+\subsection{Convert videos to more standard format}
+\label{sec:org88fea72}
+
+\subsubsection{Function to convert}
+\label{sec:orga59d24c}
+\begin{verbatim}
+W(){
+    ffmpeg -i "mov/${1}.MOV" "mp4/${1}.mp4" -c:v libx264
+}
+\end{verbatim}
+\subsubsection{Convert all videos}
+\label{sec:orgcc811e0}
+\begin{verbatim}
+W 'IMG_0629 weldnut'
+W 'IMG_0630-14 weldnut scan'
+W 'IMG_0631-14 weldnut scan'
+W 'IMG_0632-14 weldnut scan'
+W 'IMG_0633-12 weldnut scan'
+\end{verbatim}
+\subsection{Extract first frame}
+\label{sec:orgc8f4c55}
+
+\subsubsection{Function to extract}
+\label{sec:org07295af}
+\begin{verbatim}
+W(){
+    mkdir -pv -- "mp4/${1}.dir"
+    ffmpeg -i "mp4/${1}.mp4" -r 1 "mp4/${1}.dir/%d.png" 
+}
+\end{verbatim}
+\subsubsection{get from all videos}
+\label{sec:org36562be}
+\begin{verbatim}
+W 'IMG_0629 weldnut'
+W 'IMG_0630-14 weldnut scan'
+W 'IMG_0631-14 weldnut scan'
+W 'IMG_0632-14 weldnut scan'
+W 'IMG_0633-12 weldnut scan'
+\end{verbatim}
+\section{Code to extract bounding box}
+\label{sec:org95902d8}
+\begin{verbatim}
+from PIL import Image
+from ben2 import BEN_Base
+import cv2
+import numpy as np
+import os
+import torch
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = BEN_Base.from_pretrained("PramaLLC/BEN2")
+model.to(device).eval()
+
+
+def process_segment(img):
+    return (img[:, :, 3] > 127).astype(np.uint8)
+
+
+def do_infer(image_PIL_input):
+    foreground_PIL_output = model.inference(
+        image_PIL_input,
+        refine_foreground=False,
+    )  # Refine foreground is an extract postprocessing step that increases inference time but can improve matting edges. The default value is False.
+    return foreground_PIL_output
+
+
+def write_mask(path_file_image_input, path_file_mask_output):
+    do_infer(image_PIL_input=Image.open(path_file_image_input)).save(
+        path_file_mask_output
+    )
+    cv2.imwrite(
+        path_file_mask_output,
+        process_segment(img=cv2.imread(path_file_mask_output, cv2.IMREAD_UNCHANGED)),
+    )
+
+
+def get_bbox(path_file_mask_input):
+    mask_input = cv2.imread(path_file_mask_input, cv2.IMREAD_GRAYSCALE)
+    rows = np.any(mask_input, axis=1)
+    cols = np.any(mask_input, axis=0)
+    r = np.where(rows)[0]
+    c = np.where(cols)[0]
+
+    if (r.flatten().shape[0] > 0) and (c.flatten().shape[0] > 0):
+        rmin, rmax = r[[0, -1]]
+        cmin, cmax = c[[0, -1]]
+        return rmin.item(), cmin.item(), rmax.item(), cmax.item()
+    else:
+        return 0, 0, mask_input.shape[0] - 1, mask_input.shape[1] - 1
+
+
+def image_2_bbox(path_prefix_input):
+    write_mask(
+        path_file_image_input=path_prefix_input + ".png",
+        path_file_mask_output=path_prefix_input + "_M.png",
+    )
+    y1, x1, y2, x2 = get_bbox(path_file_mask_input=path_prefix_input + "_M.png")
+    h = y2 - y1
+    w = x2 - x1
+    with open(path_prefix_input + "_bbox.txt", "w", encoding="utf-8") as f:
+        f.write(str(x1) + "," + str(y1) + "," + str(w) + "," + str(h))
+
+
+image_2_bbox(path_prefix_input="./mp4/IMG_0629 weldnut.dir/1")
+image_2_bbox(path_prefix_input="./mp4/IMG_0630-14 weldnut scan.dir/1")
+image_2_bbox(path_prefix_input="./mp4/IMG_0631-14 weldnut scan.dir/1")
+image_2_bbox(path_prefix_input="./mp4/IMG_0632-14 weldnut scan.dir/1")
+image_2_bbox(path_prefix_input="./mp4/IMG_0633-12 weldnut scan.dir/1")
+\end{verbatim}
+\section{YOLO SAM for tracking nut in video}
+\label{sec:org4e21831}
+
+Yolo provides CLI tool which can be used to directly obtain object tracking masks on the video.
+\begin{verbatim}
+yolo predict model=sam2.1_t.pt source=1.mp4
+\end{verbatim}
+Perhaps, we can get better results using \href{https://github.com/yangchris11/samurai}{samurai} but I did not have the compute power or time to test this.
+
+The tracked video is in \texttt{mp4/IMG\_0629 weldnut\_track.mp4}.
+\end{document}

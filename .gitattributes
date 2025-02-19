@@ -8,3 +8,4 @@ mask/IMG_0627[[:space:]]weldnut.png filter=lfs diff=lfs merge=lfs -text
 mask/IMG_0628[[:space:]]weldnut.png filter=lfs diff=lfs merge=lfs -text
 mask/IMG_0621[[:space:]]weldnut.png filter=lfs diff=lfs merge=lfs -text
 mp4/IMG_0629[[:space:]]weldnut_track.mp4 filter=lfs diff=lfs merge=lfs -text
+README.pdf filter=lfs diff=lfs merge=lfs -text

@@ -378,6 +378,8 @@ Yolo provides CLI tool which can be used to directly obtain object tracking mask
 #+end_src
 Perhaps, we can get better results using [[https://github.com/yangchris11/samurai][samurai]] but I did not have the compute power or time to test this.
 
+The tracked video is in =mp4/IMG_0629 weldnut_track.mp4=.
+
 * COMMENT Samurai
 #+begin_src sh :shebang #!/bin/sh :results output :tangle ./track.sh
   . "${HOME}/BEN2/bin/activate"
